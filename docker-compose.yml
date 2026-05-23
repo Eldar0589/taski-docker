@@ -1,0 +1,42 @@
+version: '3.8'
+
+volumes:
+  pg_data:
+  static:
+
+services:
+  db:
+    image: postgres:13.10
+    container_name: db
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend/
+    container_name: backend
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - static:/backend_static
+
+  frontend:
+    build: ./frontend/
+    container_name: frontend
+    env_file: .env
+    volumes:
+      - static:/frontend_static
+    command: >
+      sh -c "cp -r /app/build/. /frontend_static/"
+
+  gateway:
+    build: ./gateway/
+    container_name: gateway
+    depends_on:
+      - backend
+      - frontend
+    volumes:
+      - static:/staticfiles
+    ports:
+      - "8000:80"
